@@ -72,8 +72,6 @@ const SignInScreen = ({ navigation }) => {
       const data = await response.json();
 
       if (response.ok) {
-        console.log('Login successful:', data);
-        
         // 1. Store userId in AsyncStorage
         await AsyncStorage.setItem('userId', String(data.userId));
 
@@ -81,7 +79,7 @@ const SignInScreen = ({ navigation }) => {
         if (data.token) {
           await AsyncStorage.setItem('authToken', data.token);
         } else {
-          console.warn("No token returned from server");
+          console.warn('No token returned from server');
         }
         
         // Navigate to MainDrawer or your home screen

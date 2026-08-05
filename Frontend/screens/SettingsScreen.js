@@ -47,9 +47,12 @@ export default function SettingsScreen() {
 
   // bootstrap: load userId, token, and current email
   useEffect(() => {
+    let isMounted = true;
+
     (async () => {
       const uid = await AsyncStorage.getItem('userId');
       const tok = await AsyncStorage.getItem('authToken');
+      if (!isMounted) return;
       if (uid) setUserId(uid);
       if (tok) setToken(tok);
 
@@ -58,15 +61,20 @@ export default function SettingsScreen() {
           const res = await fetch(`${BASE_URL}/profile/${uid}`, {
             headers: { Authorization: `Bearer ${tok}` },
           });
+          if (!isMounted) return;
           if (res.ok) {
             const json = await res.json();
-            setEmail(json.Email);
+            if (isMounted) setEmail(json.Email);
           }
         } catch {
           console.warn('Could not load profile');
         }
       }
     })();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // helpers: headers, updateEmail, updatePassword, scheduleBreak

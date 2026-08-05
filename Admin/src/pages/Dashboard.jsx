@@ -12,11 +12,18 @@ function Dashboard() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 
   useEffect(() => {
-    fetchData();
+    if (localStorage.getItem('auth') !== '1') {
+      navigate('/');
+      return;
+    }
+    const mountedRef = { current: true };
+    fetchData(mountedRef);
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
-
-  async function fetchData() {
+  async function fetchData(mountedRef) {
     setIsLoading(true);
     try {
       // Fetch stats
@@ -27,6 +34,8 @@ function Dashboard() {
       const postsRes = await fetch(`${API_BASE_URL}/getposts`);
       const postsData = await postsRes.json();
 
+      if (!mountedRef?.current) return;
+
       setStats({
         totalUsers: statsData.totalUsers || 0,
         totalPosts: statsData.totalPosts || 0,
@@ -36,9 +45,9 @@ function Dashboard() {
       setPosts(Array.isArray(postsData) ? postsData : []);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      alert('Failed to fetch data. Check console for details.');
+      if (mountedRef?.current !== false) alert('Failed to fetch data. Check console for details.');
     } finally {
-      setIsLoading(false);
+      if (mountedRef?.current !== false) setIsLoading(false);
     }
   }
 
@@ -73,7 +82,7 @@ function Dashboard() {
     );
   }
 
-  return localStorage.getItem("auth")==="1"&& (
+  return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <h1 className="flex justify-between items-center text-3xl font-bold text-blue-900 mb-8">
         <span>SAPPHIRE Admin Dashboard</span>

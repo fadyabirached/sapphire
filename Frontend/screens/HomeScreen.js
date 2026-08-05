@@ -28,12 +28,17 @@ const HomeScreen = () => {
   const [profileData, setProfileData] = useState(null); // { Username, ProfileURL, Bio, Rank }
 
   const lastTapRef = useRef(null); // For double-tap detection
+  const isMountedRef = useRef(true);
 
   // ---------------------------
   // Load posts on mount
   // ---------------------------
   useEffect(() => {
+    isMountedRef.current = true;
     fetchPosts();
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
 
   // ---------------------------
@@ -42,10 +47,8 @@ const HomeScreen = () => {
   const fetchPosts = async () => {
     try {
       const token = await AsyncStorage.getItem('authToken');
-      console.log('Fetching posts. Token =', token);
 
       if (!token) {
-        console.log('No auth token found, cannot fetch posts');
         return;
       }
 
@@ -56,10 +59,11 @@ const HomeScreen = () => {
       });
       const data = await response.json();
 
+      if (!isMountedRef.current) return;
+
       if (response.ok) {
         // data is an array of objects:
         // { post_id, userId, postText, postImage, likeCount, userName, userProfileImage, liked }
-        console.log('Posts fetch success:', data.length, 'posts retrieved');
         setPosts(data);
       } else {
         console.log('Failed to fetch posts:', data.error);
@@ -99,10 +103,8 @@ const HomeScreen = () => {
     // 2) server update
     try {
       const token = await AsyncStorage.getItem('authToken');
-      console.log('toggleLike. Token =', token);
 
       if (!token) {
-        console.log('No token, cannot update like in DB');
         return;
       }
       const action = currentlyLiked ? 'unlike' : 'like';
@@ -175,12 +177,10 @@ const HomeScreen = () => {
   // Fullscreen image viewer
   // ---------------------------
   const openImageViewer = (imageUri) => {
-    console.log('Opening image viewer for URI:', imageUri);
     setSelectedImage(imageUri);
     setScale(1);
   };
   const closeImageViewer = () => {
-    console.log('Closing image viewer');
     setSelectedImage(null);
   };
   const handlePinch = ({ nativeEvent }) => {
@@ -191,12 +191,9 @@ const HomeScreen = () => {
   // Fetch & display user profile
   // ---------------------------
   const handleUserProfilePress = async (userId) => {
-    console.log('handleUserProfilePress called with userId =', userId);
     try {
       const token = await AsyncStorage.getItem('authToken');
-      console.log('Got token from AsyncStorage:', token);
       if (!token) {
-        console.log('No token, cannot fetch user profile');
         return;
       }
 
@@ -206,12 +203,12 @@ const HomeScreen = () => {
         },
       });
       const data = await response.json();
-      console.log('Profile fetch returned status:', response.status, 'response:', data);
+
+      if (!isMountedRef.current) return;
 
       if (response.ok) {
         // data might look like:
         // { ID, Username, Email, Bio, Rank, ProfileURL: "http://host/uploads/filename" }
-        console.log('Profile fetch success:', data);
         setProfileData(data);
         setProfileModalVisible(true);
       } else {

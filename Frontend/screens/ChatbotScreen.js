@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { GiftedChat, Bubble, InputToolbar, Send } from 'react-native-gifted-chat';
 import axios from 'axios';
+import { COHERE_API_KEY } from '../config';
 
 // Replace with your own bot's avatar or comment it out if you don't have an image
 import MEE6 from '../assets/MEE6.png';
@@ -34,6 +35,10 @@ const ChatbotScreen = () => {
 
   // 2. The function that calls Cohere’s API
   const fetchBotResponse = async (userMessage) => {
+    if (!COHERE_API_KEY) {
+      console.warn('COHERE_API_KEY is not set in config.js');
+      return 'The fitness bot is not configured yet. Please try again later.';
+    }
     try {
       // We prepend a "system" or "role" style instruction so the chatbot stays on topic
       // This approach ensures the model understands the fitness context each time.
@@ -57,7 +62,7 @@ Bot:
         },
         {
           headers: {
-            Authorization: `YOUR_API_KEY`, // Replace with your actual API key
+            Authorization: `Bearer ${COHERE_API_KEY}`,
             'Content-Type': 'application/json',
           },
         }

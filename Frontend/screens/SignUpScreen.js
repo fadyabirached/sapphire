@@ -84,26 +84,21 @@ const SignUpScreen = ({ navigation }) => {
       const data = await response.json();
 
       if (response.ok) {
-        console.log('Signup success:', data);
-
         // 1) Store userId
         if (data.userId) {
           await AsyncStorage.setItem('userId', String(data.userId));
-          console.log('Saved userId to AsyncStorage:', data.userId);
         }
 
         // 2) Store token (so the user is immediately authenticated)
         if (data.token) {
           await AsyncStorage.setItem('authToken', data.token);
-          console.log('Saved authToken to AsyncStorage:', data.token);
         } else {
-          console.warn("No token received from backend");
+          console.warn('No token received from backend');
         }
 
         // 3) Navigate to the main screen (e.g., MainDrawer)
         navigation.navigate('MainDrawer');
       } else {
-        console.log('Signup error:', data.error);
         setGlobalError(data.error || 'An error occurred during signup');
       }
     } catch (error) {

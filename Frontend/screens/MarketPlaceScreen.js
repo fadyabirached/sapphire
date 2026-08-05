@@ -41,8 +41,14 @@ export default function MarketPlaceScreen() {
   // Refresh toggle (to trigger re-render if needed)
   const [refresh, setRefresh] = useState(false);
 
+  const isMountedRef = React.useRef(true);
+
   useEffect(() => {
+    isMountedRef.current = true;
     fetchProducts();
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
 
   // ---------------------------
@@ -52,13 +58,15 @@ export default function MarketPlaceScreen() {
     try {
       const token = await AsyncStorage.getItem('authToken');
       if (!token) {
-        console.log('No token found; cannot fetch products.');
         return;
       }
       const response = await fetch(`${BASE_URL}/products`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
+
+      if (!isMountedRef.current) return;
+
       if (response.ok) {
         setProducts(data);
       } else {
@@ -113,7 +121,6 @@ export default function MarketPlaceScreen() {
       });
       const data = await response.json();
       if (response.ok) {
-        console.log(data.message || 'Item added to cart.');
         await fetchCart();
       } else {
         console.log('Error adding to cart:', data.error);

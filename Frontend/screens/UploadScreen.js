@@ -30,12 +30,13 @@ const UploadScreen = () => {
   // Fetch user profile on mount
   // =========================
   useEffect(() => {
+    let isMounted = true;
+
     const fetchProfile = async () => {
       try {
         const token = await AsyncStorage.getItem('authToken');
         const userId = await AsyncStorage.getItem('userId');
         if (!token || !userId) {
-          console.log('User not authenticated.');
           return;
         }
 
@@ -48,6 +49,8 @@ const UploadScreen = () => {
         });
 
         const data = await response.json();
+        if (!isMounted) return;
+
         if (response.ok) {
           // set user name + profile image from DB
           setUserName(data.Username || '');
@@ -61,6 +64,9 @@ const UploadScreen = () => {
     };
 
     fetchProfile();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // =========================

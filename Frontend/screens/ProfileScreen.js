@@ -43,9 +43,15 @@ const ProfileScreen = () => {
     Elite: '#9C27B0',
   };
 
+  const isMountedRef = React.useRef(true);
+
   // 1) Load profile on mount
   useEffect(() => {
+    isMountedRef.current = true;
     loadUserProfile();
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
 
   const loadUserProfile = async () => {
@@ -56,6 +62,9 @@ const ProfileScreen = () => {
       // (But if it's protected, you should add Authorization header too)
       const response = await fetch(`${BASE_URL}/profile/${userId}`);
       const data = await response.json();
+
+      if (!isMountedRef.current) return;
+
       if (response.ok) {
         setUsername(data.Username || '');
         setBio(data.Bio || '');
