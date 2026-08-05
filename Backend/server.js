@@ -52,6 +52,27 @@ function authenticateToken(req, res, next) {
   });
 }
 
+// ================== ADMIN AUTH ================== //
+// Admin credentials live only in the server's environment (ADMIN_EMAIL /
+// ADMIN_PASSWORD_HASH), never in client code, so they can't be read out of
+// the Admin app's JS bundle.
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH;
+
+function authenticateAdmin(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  if (!authHeader) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+  const token = authHeader.split(' ')[1];
+  jwt.verify(token, SECRET_KEY, (err, decoded) => {
+    if (err || decoded.role !== 'admin') {
+      return res.status(403).json({ error: 'Invalid token' });
+    }
+    next();
+  });
+}
+
 // ================== MULTER SETUP ================== //
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -689,12 +710,48 @@ app.post('/profile/:userId/password', authenticateToken, async (req, res) => {
 });
 
 //ADMIN
+
 /*******************************************
- * GET /stats 
- * Returns total user count, total posts, 
+ * POST /admin/login
+ * Verifies the admin credentials against the
+ * server-side ADMIN_EMAIL / ADMIN_PASSWORD_HASH
+ * env vars and returns an admin-scoped JWT.
+ *******************************************/
+app.post('/admin/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required.' });
+    }
+
+    if (!ADMIN_EMAIL || !ADMIN_PASSWORD_HASH) {
+      console.error('Admin login is not configured: set ADMIN_EMAIL and ADMIN_PASSWORD_HASH.');
+      return res.status(500).json({ error: 'Admin login is not configured.' });
+    }
+
+    if (email !== ADMIN_EMAIL) {
+      return res.status(401).json({ error: 'Invalid email or password.' });
+    }
+
+    const match = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
+    if (!match) {
+      return res.status(401).json({ error: 'Invalid email or password.' });
+    }
+
+    const token = jwt.sign({ role: 'admin' }, SECRET_KEY, { expiresIn: '12h' });
+    return res.json({ message: 'Login successful', token });
+  } catch (error) {
+    console.error('Admin login error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/*******************************************
+ * GET /stats
+ * Returns total user count, total posts,
  * total likes.
  *******************************************/
-app.get('/stats', async (req, res) => {
+app.get('/stats', authenticateAdmin, async (req, res) => {
   try {
     const userCountQuery = await pool.query('SELECT COUNT(*) AS total_users FROM "User"');
     const postCountQuery = await pool.query('SELECT COUNT(*) AS total_posts FROM "Post"');
@@ -712,10 +769,10 @@ app.get('/stats', async (req, res) => {
 });
 
 /*******************************************
- * GET /posts (public)
+ * GET /getposts (admin)
  * Returns all posts with user info
  *******************************************/
-app.get('/getposts', async (req, res) => {
+app.get('/getposts', authenticateAdmin, async (req, res) => {
   try {
     const query = `
       SELECT
@@ -764,10 +821,10 @@ app.get('/getposts', async (req, res) => {
 });
 
 /*******************************************
- * DELETE /posts/:postId (public)
- * Deletes a post by ID (no token)
+ * DELETE /posts/:postId (admin)
+ * Deletes a post by ID
  *******************************************/
-app.delete('/posts/:postId', async (req, res) => {
+app.delete('/posts/:postId', authenticateAdmin, async (req, res) => {
   try {
     const { postId } = req.params;
 

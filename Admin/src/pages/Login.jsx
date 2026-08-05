@@ -4,21 +4,39 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react'; 
 import logo from '../assets/SapphireFYPlogo.png'; // adjust if needed
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  // Simple hard-coded login check
-  const handleSubmit = (e) => {
+  // Credentials are verified server-side (POST /admin/login) so they never
+  // live in the client bundle.
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (email === 'admin@gmail.com' && password === '12345678') {
-      // Navigate to dashboard
-      localStorage.setItem("auth","1")
-      navigate('/dashboard');
-    } else {
-      alert('Invalid credentials. Please try again.');
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.token) {
+        localStorage.setItem('auth', '1');
+        localStorage.setItem('adminToken', data.token);
+        navigate('/dashboard');
+      } else {
+        alert(data.error || 'Invalid credentials. Please try again.');
+      }
+    } catch (err) {
+      alert('Unable to reach the server. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -87,13 +105,14 @@ function Login() {
 
           {/* Sign In Button */}
           <div>
-            <button 
+            <button
               type="submit"
-              className="w-full px-4 py-2 text-white bg-[#2C4F83] rounded-md 
-                         hover:bg-blue-800 focus:outline-none focus:ring-2 
-                         focus:ring-[#2C4F83] font-medium"
+              disabled={submitting}
+              className="w-full px-4 py-2 text-white bg-[#2C4F83] rounded-md
+                         hover:bg-blue-800 focus:outline-none focus:ring-2
+                         focus:ring-[#2C4F83] font-medium disabled:opacity-60"
             >
-              Sign In
+              {submitting ? 'Signing In...' : 'Sign In'}
             </button>
           </div>
         </form>

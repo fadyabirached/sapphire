@@ -11,27 +11,38 @@ function Dashboard() {
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 
+  function logout() {
+    localStorage.removeItem('auth');
+    localStorage.removeItem('adminToken');
+    navigate('/');
+  }
+
   useEffect(() => {
-    if (localStorage.getItem('auth') !== '1') {
-      navigate('/');
+    const token = localStorage.getItem('adminToken');
+    if (localStorage.getItem('auth') !== '1' || !token) {
+      logout();
       return;
     }
     const mountedRef = { current: true };
-    fetchData(mountedRef);
+    fetchData(mountedRef, token);
     return () => {
       mountedRef.current = false;
     };
   }, []);
 
-  async function fetchData(mountedRef) {
+  async function fetchData(mountedRef, token) {
     setIsLoading(true);
     try {
+      const authHeaders = { Authorization: `Bearer ${token}` };
+
       // Fetch stats
-      const statsRes = await fetch(`${API_BASE_URL}/stats`);
+      const statsRes = await fetch(`${API_BASE_URL}/stats`, { headers: authHeaders });
+      if (statsRes.status === 401 || statsRes.status === 403) return logout();
       const statsData = await statsRes.json();
 
       // Fetch posts
-      const postsRes = await fetch(`${API_BASE_URL}/getposts`);
+      const postsRes = await fetch(`${API_BASE_URL}/getposts`, { headers: authHeaders });
+      if (postsRes.status === 401 || postsRes.status === 403) return logout();
       const postsData = await postsRes.json();
 
       if (!mountedRef?.current) return;
@@ -56,9 +67,12 @@ function Dashboard() {
     if (!window.confirm('Are you sure you want to delete this post?')) return;
 
     try {
+      const token = localStorage.getItem('adminToken');
       const res = await fetch(`${API_BASE_URL}/posts/${postId}`, {
         method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
       });
+      if (res.status === 401 || res.status === 403) return logout();
       const data = await res.json();
 
       if (res.ok) {
@@ -86,12 +100,9 @@ function Dashboard() {
     <div className="p-6 bg-gray-50 min-h-screen">
       <h1 className="flex justify-between items-center text-3xl font-bold text-blue-900 mb-8">
         <span>SAPPHIRE Admin Dashboard</span>
-        <span 
+        <span
           className="text-black hover:bg-red-500 hover:text-white m-3 p-2 rounded-xl cursor-pointer"
-          onClick={() => {
-            localStorage.removeItem("auth");
-            navigate('/');
-          }}
+          onClick={logout}
         >
           logout
         </span>
