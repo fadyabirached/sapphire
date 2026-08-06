@@ -9,7 +9,8 @@ import {
 } from 'react-native';
 import { GiftedChat, Bubble, InputToolbar, Send } from 'react-native-gifted-chat';
 import axios from 'axios';
-import { COHERE_API_KEY } from '../config';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BASE_URL } from '../config';
 
 // Replace with your own bot's avatar or comment it out if you don't have an image
 import MEE6 from '../assets/MEE6.png';
@@ -33,44 +34,23 @@ const ChatbotScreen = () => {
     ]);
   }, []);
 
-  // 2. The function that calls Cohere’s API
+  // 2. Ask the backend's /chatbot endpoint, which proxies to Cohere. The
+  // Cohere API key stays server-side and never ships inside the app bundle.
   const fetchBotResponse = async (userMessage) => {
-    if (!COHERE_API_KEY) {
-      console.warn('COHERE_API_KEY is not set in config.js');
-      return 'The fitness bot is not configured yet. Please try again later.';
-    }
     try {
-      // We prepend a "system" or "role" style instruction so the chatbot stays on topic
-      // This approach ensures the model understands the fitness context each time.
-      const systemInstruction = `
-You are a helpful chatbot specialized in fitness, gym routines, calisthenics, and nutrition.
-The user will ask you questions or chat with you only about these topics. 
-If they ask about anything else, politely remind them this conversation is for fitness-related topics only.
-
-User: ${userMessage}
-Bot:
-      `;
-
-      // Send the combined prompt to Cohere
+      const token = await AsyncStorage.getItem('authToken');
       const response = await axios.post(
-        'https://api.cohere.ai/v1/generate',
-        {
-          model: 'command-xlarge',
-          prompt: systemInstruction,
-          max_tokens: 150,
-          temperature: 0.7,
-        },
+        `${BASE_URL}/chatbot`,
+        { message: userMessage },
         {
           headers: {
-            Authorization: `Bearer ${COHERE_API_KEY}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         }
       );
 
-      // Cohere's text output is in "generations[0].text"
-      const botReply = response.data.generations[0].text.trim();
-      return botReply;
+      return response.data.reply;
     } catch (error) {
       console.error(
         'Error fetching bot response:',

@@ -28,6 +28,9 @@ function Dashboard() {
     return () => {
       mountedRef.current = false;
     };
+    // Runs once on mount only; fetchData/logout are redefined every render
+    // and would cause a refetch loop if added as dependencies.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function fetchData(mountedRef, token) {

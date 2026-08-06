@@ -33,7 +33,7 @@ function Login() {
       } else {
         alert(data.error || 'Invalid credentials. Please try again.');
       }
-    } catch (err) {
+    } catch {
       alert('Unable to reach the server. Please try again.');
     } finally {
       setSubmitting(false);
