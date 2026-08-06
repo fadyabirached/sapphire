@@ -20,7 +20,7 @@ const localImages = {
   'foamroller.png': require('../assets/foamroller.png'),
   'gymbag.jpg': require('../assets/gymbag.jpg'),
   'handgrip.jpg': require('../assets/handgrip.jpg'),
-  'parallettes.png': require('../assets/paralettes.png'),
+  'paralettes.png': require('../assets/paralettes.png'),
   'resistancebands.png': require('../assets/resistancebands.png'),
   'rope.jpg': require('../assets/rope.jpg'),
   'weightvest.jpg': require('../assets/weightvest.jpg'),
