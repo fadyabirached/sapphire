@@ -15,6 +15,12 @@ import { BASE_URL } from '../config';
 // Replace with your own bot's avatar or comment it out if you don't have an image
 import MEE6 from '../assets/MEE6.png';
 
+// On native, `require(...)` resolves to a numeric asset ID; on web it resolves
+// to a { uri, width, height } object instead. react-native-gifted-chat's
+// avatar renderer only handles string/number, so on web it silently renders
+// nothing unless we unwrap the uri ourselves.
+const BOT_AVATAR = typeof MEE6 === 'object' && MEE6?.uri ? MEE6.uri : MEE6;
+
 const ChatbotScreen = () => {
   const [messages, setMessages] = useState([]);
 
@@ -28,7 +34,7 @@ const ChatbotScreen = () => {
         user: {
           _id: 2,
           name: 'Fitness Bot',
-          avatar: MEE6,
+          avatar: BOT_AVATAR,
         },
       },
     ]);
@@ -83,7 +89,7 @@ const ChatbotScreen = () => {
             user: {
               _id: 2,
               name: 'Fitness Bot',
-              avatar: MEE6,
+              avatar: BOT_AVATAR,
             },
           },
         ])
