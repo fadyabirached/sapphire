@@ -10,12 +10,14 @@ import {
   Keyboard,
   ScrollView,
   Pressable, // Import Pressable instead
+  Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '../config';
+import { appendImageToFormData } from '../utils/uploadFile';
 
 const UploadScreen = () => {
   // User data state (fetched from backend)
@@ -73,6 +75,13 @@ const UploadScreen = () => {
   // IMAGE PICKER LOGIC
   // =========================
   const handleImageSelection = () => {
+    // Alert.alert has no web implementation (react-native-web's Alert is a
+    // no-op), so the action-sheet menu never appears there. Go straight to
+    // the gallery picker on web instead of silently doing nothing.
+    if (Platform.OS === 'web') {
+      handlePickImage();
+      return;
+    }
     Alert.alert('Upload Image', 'Choose an option', [
       { text: 'Take a Photo', onPress: handleTakePhoto },
       { text: 'Choose from Gallery', onPress: handlePickImage },
@@ -142,17 +151,16 @@ const UploadScreen = () => {
       const formData = new FormData();
       formData.append('text', postText);
       if (uploadedImage) {
-        formData.append('image', {
-          uri: uploadedImage,
-          type: 'image/jpeg',
-          name: 'upload.jpg',
-        });
+        await appendImageToFormData(formData, 'image', uploadedImage, 'upload.jpg');
       }
 
       const response = await fetch(`${BASE_URL}/posts`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'multipart/form-data',
+          // Do NOT set Content-Type here: fetch needs to generate it itself
+          // (multipart/form-data; boundary=...) from the FormData body. A
+          // manual value with no boundary makes the server's multipart
+          // parser crash with "Boundary not found".
           'Authorization': `Bearer ${token}`,
         },
         body: formData,

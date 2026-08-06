@@ -9,6 +9,7 @@ import {
   ScrollView,
   Modal,
   TextInput,
+  Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +17,7 @@ import Octicons from '@expo/vector-icons/Octicons';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '../config';
+import { appendImageToFormData } from '../utils/uploadFile';
 
 const ProfileScreen = () => {
   // State fields from DB
@@ -114,17 +116,16 @@ const ProfileScreen = () => {
       }
 
       const formData = new FormData();
-      formData.append('image', {
-        uri: localUri,
-        type: 'image/jpeg',
-        name: 'profile.jpg',
-      });
+      await appendImageToFormData(formData, 'image', localUri, 'profile.jpg');
 
       const response = await fetch(`${BASE_URL}/profile/${userId}/picture`, {
         method: 'PUT',
         headers: {
+          // Do NOT set Content-Type here: fetch needs to generate it itself
+          // (multipart/form-data; boundary=...) from the FormData body. A
+          // manual value with no boundary makes the server's multipart
+          // parser crash with "Boundary not found".
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
         },
         body: formData,
       });
@@ -143,6 +144,13 @@ const ProfileScreen = () => {
 
   // =========== IMAGE PICKER LOGIC ===========
   const handleImageSelection = async () => {
+    // Alert.alert has no web implementation (react-native-web's Alert is a
+    // no-op), so the action-sheet menu never appears there. Go straight to
+    // the gallery picker on web instead of silently doing nothing.
+    if (Platform.OS === 'web') {
+      handlePickImage();
+      return;
+    }
     Alert.alert('Select Profile Picture', 'Choose an option', [
       { text: 'Take a Photo', onPress: handleTakePhoto },
       { text: 'Choose from Gallery', onPress: handlePickImage },
