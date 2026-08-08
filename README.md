@@ -31,6 +31,7 @@ Express/PostgreSQL API and a React admin console.
 <table>
   <tr>
     <td align="center"><img src="screenshots/mobile-home.png" width="180" alt="Home feed"/><br/>Home feed</td>
+    <td align="center"><img src="screenshots/mobile-user-profile-modal.png" width="180" alt="Tap a poster's name for their profile"/><br/>Tap a name for their profile</td>
     <td align="center"><img src="screenshots/mobile-upload.png" width="180" alt="New post"/><br/>New post</td>
     <td align="center"><img src="screenshots/mobile-profile.png" width="180" alt="Profile"/><br/>Profile</td>
     <td align="center"><img src="screenshots/mobile-settings.png" width="180" alt="Settings"/><br/>Settings</td>

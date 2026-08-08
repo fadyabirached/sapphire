@@ -171,6 +171,11 @@ function TabNavigator() {
           elevation: 5,
           paddingBottom: 5,
           paddingTop: 5,
+          // Without an explicit height, react-navigation's web default is too
+          // short to fit both the icon and its label, so the label gets
+          // flex-shrunk to ~1px and clipped by overflow:hidden — the tab bar
+          // silently loses its text on web even though native has room for it.
+          height: 60,
         },
         tabBarLabelStyle: {
           fontSize: 12,
