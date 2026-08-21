@@ -143,6 +143,22 @@ flowchart LR
 
 </details>
 
+## 🗂️ Image storage
+
+Post images, profile avatars, and product photos are handled by **Multer**
+(`middleware/upload.js`), configured with `multer.diskStorage` — uploads are written
+straight to a local `uploads/` folder on the server, each given a timestamped filename to
+avoid collisions. `server.js` serves that folder statically at `/uploads`.
+
+Postgres never stores a full URL — only the filename (`Post.ImageURL`, `User.ProfileURL`,
+`Product.ProductImageURL`). The backend builds the actual URL on the fly whenever it
+returns a record, e.g. `` `${req.protocol}://${req.get('host')}/uploads/${filename}` ``.
+That keeps the stored value portable across environments (dev/prod host changes don't
+require touching existing rows) at the cost of the files themselves living on that one
+server's disk rather than in networked object storage (S3/Blob) — fine for a single-server
+deployment, but a future consideration if the backend ever needs to run across multiple
+hosts.
+
 ## 🧰 Tech stack
 
 | Layer | Stack |
