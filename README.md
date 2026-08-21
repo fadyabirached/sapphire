@@ -111,10 +111,12 @@ flowchart LR
         ADM["📊 Admin routes<br/>stats · moderation"]
         CHAT["💬 Chatbot route"]
         MW["🔒 JWT middleware<br/>user · admin guard"]
+        UPLOAD["📤 Multer middleware<br/>diskStorage"]
         SPAM["🛡️ AI moderation<br/>middleware"]
     end
 
-    DB[("🗄️ PostgreSQL")]
+    DB[("🗄️ PostgreSQL<br/>filename only")]
+    FS[("💾 uploads/<br/>local disk")]
     HF[["🤗 Hugging Face<br/>NSFW/spam image model"]]
     CO[["🧠 Cohere<br/>fitness chatbot"]]
 
@@ -122,19 +124,23 @@ flowchart LR
     AD -->|"HTTPS + admin JWT"| ADM
     AUTH & PROF & POST & MKT & ADM & CHAT --> MW
     MW --> DB
+    POST & PROF -->|"image upload"| UPLOAD --> FS
     POST --> SPAM --> HF
     CHAT --> CO
+    FS -.->|"filename saved"| DB
 
     classDef client fill:#DCEEFB,stroke:#2C4F83,stroke-width:1.5px,color:#0B2545;
     classDef route fill:#FFF3D6,stroke:#C68A1A,stroke-width:1.5px,color:#5A3E00;
     classDef guard fill:#EFE3FB,stroke:#7B4FA6,stroke-width:1.5px,color:#3B1E5E;
     classDef store fill:#DFF5E1,stroke:#2E7D4F,stroke-width:1.5px,color:#0F3D22;
+    classDef disk fill:#EDEDED,stroke:#6B7280,stroke-width:1.5px,color:#374151;
     classDef ai fill:#FCE0E4,stroke:#C23B5A,stroke-width:1.5px,color:#5E1425;
 
     class RN,AD client;
     class AUTH,PROF,POST,MKT,ADM,CHAT route;
-    class MW,SPAM guard;
+    class MW,UPLOAD,SPAM guard;
     class DB store;
+    class FS disk;
     class HF,CO ai;
 
     style Clients fill:#F7FAFC,stroke:#A0AEC0,stroke-width:1.5px;
